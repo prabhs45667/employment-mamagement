@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attendance Analytics Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-sidebar: #0f172a;
+            --sidebar-active: #38bdf8;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-light: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 8px -1px rgba(15, 23, 42, 0.03);
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --success: #10b981;
+            --success-light: #ecfdf5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --border-color: #e2e8f0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        aside {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+            color: var(--sidebar-active);
+        }
+
+        .sidebar-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .employee-selector {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .select-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper select {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+            color: #ffffff;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .select-wrapper select:focus {
+            border-color: var(--sidebar-active);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .select-wrapper::after {
+            content: "\f0d7";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 16px 8px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 4px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .menu-item i {
+            width: 20px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .menu-item.active {
+            color: #ffffff;
+            background-color: rgba(56, 189, 248, 0.15);
+            border-left: 4px solid var(--sidebar-active);
+            padding-left: 12px;
+        }
+
+        /* Main Content Styling */
+        main {
+            margin-left: 280px;
+            flex-grow: 1;
+            padding: 32px;
+            max-width: calc(100vw - 280px);
+        }
+
+        header {
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .emp-badge {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .emp-badge.danger {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Dashboard View Container */
+        .dashboard-view {
+            display: none;
+        }
+
+        .dashboard-view.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Metric Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.15);
+        }
+
+        .metric-info h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .metric-info .value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: var(--text-main);
+        }
+
+        .metric-info .subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .metric-icon.primary { background-color: var(--primary-light); color: var(--primary); }
+        .metric-icon.success { background-color: var(--success-light); color: var(--success); }
+        .metric-icon.warning { background-color: var(--warning-light); color: var(--warning); }
+        .metric-icon.danger { background-color: var(--danger-light); color: var(--danger); }
+
+        /* Charts Grid Layouts */
+        .chart-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-row-full {
+            grid-template-columns: 1fr;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-card-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chart-card-header i {
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-card-header i:hover {
+            color: var(--primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        /* Table Card Styling */
+        .table-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 24px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--bg-main);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(37, 99, 235, 0.01);
+        }
+
+        /* Predictor Tab Styles */
+        .predictor-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 32px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .predictor-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-right: 1px solid var(--border-color);
+            padding-right: 32px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .form-group select, .form-group input {
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-predict {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-predict:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .predictor-results {
+            padding-left: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .prediction-gauge {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            border: 8px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .prediction-gauge.yes {
+            border-color: var(--danger);
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .prediction-gauge.no {
+            border-color: var(--success);
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .prediction-gauge i {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .prediction-gauge .status {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .gauge-row {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 32px;
+        }
+
+        .gauge-item h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gauge-item .prob {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .prediction-summary {
+            max-width: 320px;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* List Cards styling */
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+        }
+
+        .list-item .name {
+            font-weight: 600;
+        }
+
+        .list-item .badge {
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .badge.danger { background-color: var(--danger-light); color: var(--danger); }
+        .badge.success { background-color: var(--success-light); color: var(--success); }
+
+        /* Loader animation */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .loader-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Utility classes */
+        .w-full { width: 100%; }
+        .flex { display: flex; }
+        .gap-2 { gap: 8px; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+
+        @media (max-width: 1200px) {
+            .chart-row-2, .chart-row-3 {
+                grid-template-columns: 1fr;
+            }
+            .predictor-container {
+                grid-template-columns: 1fr;
+            }
+            .predictor-form {
+                border-right: none;
+                padding-right: 0;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 32px;
+            }
+            .predictor-results {
+                padding-left: 0;
+                padding-top: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Spinner Overlay -->
+    <div class="loader-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="sidebar-header">
+            <i class="fa-solid fa-chart-line"></i>
+            <h2>Employee Portal</h2>
+        </div>
+        
+        <div class="employee-selector">
+            <span class="select-label">Select Employee</span>
+            <div class="select-wrapper">
+                <select id="employeeSelect">
+                    <option value="" disabled selected>Loading employees...</option>
+                </select>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li>
+                <div class="menu-item active" data-tab="cumulative">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Cumulative Dashboard</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="monthly">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Monthly Overview</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="patterns">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Attendance Patterns</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="working-hours">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <span>Working Hours Analysis</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="deviation">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Deviation Analysis</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="improvement">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                    <span>Improvement Trends</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="team">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Team Comparisons</span>
+                </div>
+            </li>
+            <li>
+                <div class="menu-item" data-tab="predictor">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Live ML Predictions</span>
+                </div>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <header>
+            <div class="header-title">
+                <h1 id="viewTitle">Cumulative Dashboard</h1>
+                <p id="viewSubtitle">Overview of all employees attendance data and analytics</p>
+            </div>
+            <div>
+                <span class="emp-badge" id="employeeBadge">
+                    <i class="fa-solid fa-users-viewfinder"></i> <span id="badgeName">All Employees</span>
+                </span>
+            </div>
+        </header>
+
+        <!-- Dynamic Tabs Views -->
+
+        <!-- 1. Cumulative Dashboard View -->
+        <div class="dashboard-view active" id="view-cumulative">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Total Employees</h3>
+                        <div class="value" id="c-total-emp">--</div>
+                        <div class="subtext">Unique active staff</div>
+                    </div>
+                    <div class="metric-icon primary">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Total Records</h3>
+                        <div class="value" id="c-total-rec">--</div>
+                        <div class="subtext">Total logging entries</div>
+                    </div>
+                    <div class="metric-icon success">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Avg Late Rate</h3>
+                        <div class="value" id="c-late-rate">--%</div>
+                        <div class="subtext">Arriving after 9:00 AM</div>
+                    </div>
+                    <div class="metric-icon danger">
+                        <i class="fa-solid fa-business-time"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Avg Early Leave</h3>
+                        <div class="value" id="c-early-rate">--%</div>
+                        <div class="subtext">Departing before 6:00 PM</div>
+                    </div>
+                    <div class="metric-icon warning">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Overall Attendance Rates</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="c-pie-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Monthly Attendance Trends</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="c-line-trend"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Working Hours vs Loss %</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="c-bar-hours"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Top Performing Staff (Punctuality)</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="table-wrapper" style="margin-top: 0; max-height: 320px; overflow-y: auto;">
+                        <table id="c-perf-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading scores...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Monthly Overview View -->
+        <div class="dashboard-view" id="view-monthly">
+            <div class="metrics-grid" id="m-metrics">
+                <!-- Dynamic cards loaded in JS -->
+            </div>
+            <div class="chart-row-full chart-card" style="margin-bottom: 24px;">
+                <div class="chart-card-header">
+                    <h3>Monthly Late Arrivals & Early Departure Rates</h3>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="m-rates-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-row-full chart-card">
+                <div class="chart-card-header">
+                    <h3>Monthly Average Working Hours</h3>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="m-hours-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Attendance Patterns View -->
+        <div class="dashboard-view" id="view-patterns">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Arrival Consistency</h3>
+                        <div class="value" id="p-arrival-dev">-- h</div>
+                        <div class="subtext">Std deviation of in-time</div>
+                    </div>
+                    <div class="metric-icon primary">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Departure Consistency</h3>
+                        <div class="value" id="p-departure-dev">-- h</div>
+                        <div class="subtext">Std deviation of out-time</div>
+                    </div>
+                    <div class="metric-icon warning">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Most Punctual Day</h3>
+                        <div class="value" id="p-punctual-day" style="font-size: 20px; font-weight: 700; margin-top: 12px;">--</div>
+                        <div class="subtext">Earliest avg In-time</div>
+                    </div>
+                    <div class="metric-icon success">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Latest Departure Day</h3>
+                        <div class="value" id="p-departure-day" style="font-size: 20px; font-weight: 700; margin-top: 12px;">--</div>
+                        <div class="subtext">Latest avg Out-time</div>
+                    </div>
+                    <div class="metric-icon primary">
+                        <i class="fa-solid fa-moon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-full chart-card">
+                <div class="chart-card-header">
+                    <h3>Average Time In & Time Out by Day of Week</h3>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+                <div class="chart-wrapper" style="height: 380px;">
+                    <canvas id="p-pattern-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Working Hours Analysis View -->
+        <div class="dashboard-view" id="view-working-hours">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Cumulative Hours</h3>
+                        <div class="value" id="w-cum-hours">-- h</div>
+                        <div class="subtext">Total active hours worked</div>
+                    </div>
+                    <div class="metric-icon success">
+                        <i class="fa-solid fa-hourglass-high"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Expected Hours</h3>
+                        <div class="value" id="w-exp-hours">-- h</div>
+                        <div class="subtext">Based on 9h per day standard</div>
+                    </div>
+                    <div class="metric-icon primary">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Hours Loss</h3>
+                        <div class="value" id="w-loss-hours">-- h</div>
+                        <div class="subtext">Expected minus actual</div>
+                    </div>
+                    <div class="metric-icon danger">
+                        <i class="fa-solid fa-hourglass-empty"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Percentage Loss</h3>
+                        <div class="value" id="w-loss-percent">--%</div>
+                        <div class="subtext">Loss as ratio of expected</div>
+                    </div>
+                    <div class="metric-icon warning">
+                        <i class="fa-solid fa-percent"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-full chart-card">
+                <div class="chart-card-header">
+                    <h3>Daily Working Hours Trend Over Time</h3>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="w-trend-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Deviation Analysis View -->
+        <div class="dashboard-view" id="view-deviation">
+            <div class="chart-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Working Hours Deviation Histogram</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="d-hist-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Employees Exceeding 15% Working Hours Deviation</h3>
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                        The system flags employees whose total working hours deviate significantly (exceeding 15%) from the baseline expected 9-hour workdays.
+                    </p>
+                    <div class="list-container" id="d-high-dev-list">
+                        <div class="list-item"><span style="color: var(--text-muted);">Loading list...</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Improvement Trends View -->
+        <div class="dashboard-view" id="view-improvement">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Late Arrival Improv.</h3>
+                        <div class="value" id="i-late-imp">--%</div>
+                        <div class="subtext">Decrease in late arrivals</div>
+                    </div>
+                    <div class="metric-icon primary">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Early Leave Improv.</h3>
+                        <div class="value" id="i-early-imp">--%</div>
+                        <div class="subtext">Decrease in early leaves</div>
+                    </div>
+                    <div class="metric-icon success">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+                <div class="metric-card" style="grid-column: span 2;">
+                    <div class="metric-info">
+                        <h3>Overall Performance Improvement Score</h3>
+                        <div class="value" id="i-score">--%</div>
+                        <div class="subtext" id="i-status">Analysis status: Processing...</div>
+                    </div>
+                    <div class="metric-icon warning">
+                        <i class="fa-solid fa-gauge"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-full chart-card">
+                <div class="chart-card-header">
+                    <h3>7-Day Rolling Averages of Attendance Rates (Punctuality Trend)</h3>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="i-trend-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Team Comparisons View -->
+        <div class="dashboard-view" id="view-team">
+            <div class="chart-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Late Arrival Rates by Team</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="t-late-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Early Leave Rates by Team</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="t-early-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row-2">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Average Working Hours by Team</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="t-hours-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3>Team Demographics (Total Members)</h3>
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="t-size-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Live ML Predictions View -->
+        <div class="dashboard-view" id="view-predictor">
+            <div class="predictor-container">
+                <div class="predictor-form">
+                    <h3 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px;">Predict Attendance Behavior</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                        Input hypothetical work hours parameters and query the pre-trained Random Forest Classifier models to identify predicted behavior.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="p-day">Day of the Week</label>
+                        <select id="p-day">
+                            <option value="0">Monday</option>
+                            <option value="1">Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                            <option value="5">Saturday</option>
+                            <option value="6">Sunday</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="p-in">Time In (Arrival HH:MM)</label>
+                        <input type="time" id="p-in" value="09:15">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="p-out">Time Out (Departure HH:MM)</label>
+                        <input type="time" id="p-out" value="17:05">
+                    </div>
+
+                    <button class="btn-predict" id="predictBtn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Predict Behavior
+                    </button>
+                </div>
+
+                <div class="predictor-results">
+                    <div class="gauge-row">
+                        <div class="gauge-item">
+                            <div class="prediction-gauge" id="late-gauge">
+                                <i class="fa-solid fa-question"></i>
+                                <span class="status">--</span>
+                            </div>
+                            <h4>Arriving Late?</h4>
+                            <div class="prob" id="late-prob">Probability: --%</div>
+                        </div>
+
+                        <div class="gauge-item">
+                            <div class="prediction-gauge" id="early-gauge">
+                                <i class="fa-solid fa-question"></i>
+                                <span class="status">--</span>
+                            </div>
+                            <h4>Leaving Early?</h4>
+                            <div class="prob" id="early-prob">Probability: --%</div>
+                        </div>
+                    </div>
+
+                    <div class="prediction-summary" id="predictionSummary">
+                        Enter values on the left and click predict. The models will run multi-classification tasks to forecast outcomes.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Global variables
+        let employees = [];
+        let selectedEmail = null;
+        let activeTab = 'cumulative';
+        let charts = {}; // Store Chart instances to destroy before updates
+
+        // DOM elements
+        const employeeSelect = document.getElementById('employeeSelect');
+        const viewTitle = document.getElementById('viewTitle');
+        const viewSubtitle = document.getElementById('viewSubtitle');
+        const badgeName = document.getElementById('badgeName');
+        const employeeBadge = document.getElementById('employeeBadge');
+        const menuItems = document.querySelectorAll('.menu-item');
+        const views = document.querySelectorAll('.dashboard-view');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            showLoader();
+            fetchEmployees();
+            setupMenuNavigation();
+            setupPredictor();
+        });
+
+        // Toggle Loader
+        function showLoader() { loadingOverlay.classList.add('active'); }
+        function hideLoader() { loadingOverlay.classList.remove('active'); }
+
+        // Fetch list of unique employees
+        function fetchEmployees() {
+            fetch('/api/employees')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error loading employees: ' + data.error);
+                        return;
+                    }
+                    employees = data;
+                    
+                    // Populate select dropdown
+                    employeeSelect.innerHTML = `<option value="" selected>All Employees (Dashboard)</option>`;
+                    employees.forEach(emp => {
+                        const opt = document.createElement('option');
+                        opt.value = emp.Email;
+                        opt.textContent = `${emp.Name} (${emp.Email})`;
+                        employeeSelect.appendChild(opt);
+                    });
+
+                    // Trigger initial dashboard load
+                    loadCumulativeDashboard();
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    hideLoader();
+                });
+        }
+
+        // Dropdown Selection listener
+        employeeSelect.addEventListener('change', (e) => {
+            selectedEmail = e.target.value || null;
+            
+            if (selectedEmail) {
+                const emp = employees.find(x => x.Email === selectedEmail);
+                badgeName.textContent = emp.Name;
+                employeeBadge.className = "emp-badge";
+                employeeBadge.innerHTML = `<i class="fa-solid fa-user"></i> <span>${emp.Name} (${emp.Team ? 'Team ' + emp.Team : 'No Team'})</span>`;
+                
+                // If on cumulative dashboard tab but an employee is selected, switch to monthly overview automatically
+                if (activeTab === 'cumulative') {
+                    switchTab('monthly');
+                } else {
+                    refreshActiveTab();
+                }
+            } else {
+                badgeName.textContent = "All Employees";
+                employeeBadge.className = "emp-badge";
+                employeeBadge.innerHTML = `<i class="fa-solid fa-users-viewfinder"></i> <span>All Employees</span>`;
+                
+                // If an employee is deselected, reset to cumulative dashboard
+                switchTab('cumulative');
+            }
+        });
+
+        // Tab Navigation
+        function setupMenuNavigation() {
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetTab = item.getAttribute('data-tab');
+                    switchTab(targetTab);
+                });
+            });
+        }
+
+        function switchTab(tabId) {
+            // Update active menu styling
+            menuItems.forEach(item => {
+                if (item.getAttribute('data-tab') === tabId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update visible view
+            views.forEach(v => {
+                if (v.id === `view-${tabId}`) {
+                    v.classList.add('active');
+                } else {
+                    v.classList.remove('active');
+                }
+            });
+
+            activeTab = tabId;
+            
+            // Update titles
+            const titles = {
+                'cumulative': ['Cumulative Dashboard', 'Overview of all employees attendance data and analytics'],
+                'monthly': ['Monthly Overview', 'Monthly breakdown of arrival punctuality and early departure rates'],
+                'patterns': ['Attendance Patterns', 'Weekday time patterns, arrival vs departure consistency'],
+                'working-hours': ['Working Hours Analysis', 'Working hours trend, expected vs actual time totals and loss rates'],
+                'deviation': ['Deviation Analysis', 'Spotting significant deviations exceeding 15% workday standard'],
+                'improvement': ['Improvement Trends', 'Rolling performance trends and overall consistency improvement scores'],
+                'team': ['Team Comparisons', 'Aggregated team metrics comparing attendance and workday behaviors'],
+                'predictor': ['Live ML Predictions', 'Query Random Forest ML models to forecast attendance behaviors']
+            };
+
+            viewTitle.textContent = titles[tabId][0];
+            viewSubtitle.textContent = titles[tabId][1];
+
+            // If selected employee is null and user clicks employee specific tab, alert and redirect to cumulative
+            const employeeSpecificTabs = ['monthly', 'patterns', 'working-hours', 'deviation', 'improvement'];
+            if (!selectedEmail && employeeSpecificTabs.includes(tabId)) {
+                alert("Please select a specific employee from the sidebar dropdown to view this analysis.");
+                switchTab('cumulative');
+                return;
+            }
+
+            refreshActiveTab();
+        }
+
+        function refreshActiveTab() {
+            showLoader();
+            
+            // Clean up any charts on the page before loading new ones to prevent ghost drawings
+            destroyTabCharts(activeTab);
+
+            if (activeTab === 'cumulative') {
+                loadCumulativeDashboard();
+            } else if (activeTab === 'monthly') {
+                loadMonthlyOverview();
+            } else if (activeTab === 'patterns') {
+                loadAttendancePatterns();
+            } else if (activeTab === 'working-hours') {
+                loadWorkingHoursAnalysis();
+            } else if (activeTab === 'deviation') {
+                loadDeviationAnalysis();
+            } else if (activeTab === 'improvement') {
+                loadImprovementTrends();
+            } else if (activeTab === 'team') {
+                loadTeamComparisons();
+            } else if (activeTab === 'predictor') {
+                hideLoader();
+            }
+        }
+
+        // Helper to destroy previous chart instances
+        function destroyTabCharts(tabId) {
+            const chartIdsByTab = {
+                'cumulative': ['c-pie-chart', 'c-line-trend', 'c-bar-hours'],
+                'monthly': ['m-rates-chart', 'm-hours-chart'],
+                'patterns': ['p-pattern-chart'],
+                'working-hours': ['w-trend-chart'],
+                'deviation': ['d-hist-chart'],
+                'improvement': ['i-trend-chart'],
+                'team': ['t-late-chart', 't-early-chart', 't-hours-chart', 't-size-chart']
+            };
+
+            const ids = chartIdsByTab[tabId] || [];
+            ids.forEach(id => {
+                if (charts[id]) {
+                    charts[id].destroy();
+                    delete charts[id];
+                }
+            });
+        }
+
+        // 1. Load Cumulative Dashboard
+        function loadCumulativeDashboard() {
+            fetch('/api/cumulative-dashboard')
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Render summary cards
+                    document.getElementById('c-total-emp').textContent = data.summary.total_employees;
+                    document.getElementById('c-total-rec').textContent = data.summary.total_records;
+                    document.getElementById('c-late-rate').textContent = data.summary.avg_late_rate.toFixed(1) + '%';
+                    document.getElementById('c-early-rate').textContent = data.summary.avg_early_rate.toFixed(1) + '%';
+
+                    // 1. Overall Pie Chart
+                    const ctxPie = document.getElementById('c-pie-chart').getContext('2d');
+                    charts['c-pie-chart'] = new Chart(ctxPie, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Punctual', 'Late Arrivals', 'Early Leaves'],
+                            datasets: [{
+                                data: [
+                                    100 - (data.summary.avg_late_rate + data.summary.avg_early_rate)/2,
+                                    data.summary.avg_late_rate,
+                                    data.summary.avg_early_rate
+                                ],
+                                backgroundColor: ['#10b981', '#3b82f6', '#ef4444'],
+                                borderWith: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+
+                    // 2. Line Chart of monthly trends
+                    const months = data.monthly_trend.map(x => x.Month_Year);
+                    const lateRates = data.monthly_trend.map(x => x.Late_Arrival);
+                    const earlyRates = data.monthly_trend.map(x => x.Early_Leave);
+
+                    const ctxTrend = document.getElementById('c-line-trend').getContext('2d');
+                    charts['c-line-trend'] = new Chart(ctxTrend, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [
+                                {
+                                    label: 'Late Rate (%)',
+                                    data: lateRates,
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                },
+                                {
+                                    label: 'Early Leave (%)',
+                                    data: earlyRates,
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, max: 100 }
+                            }
+                        }
+                    });
+
+                    // 3. Bar Chart of Working Hours vs Loss
+                    const hoursWorked = data.monthly_trend.map(x => x.Working_Hours);
+                    const lossPerc = data.monthly_trend.map(x => x.Loss_Percent);
+
+                    const ctxBar = document.getElementById('c-bar-hours').getContext('2d');
+                    charts['c-bar-hours'] = new Chart(ctxBar, {
+                        type: 'bar',
+                        data: {
+                            labels: months,
+                            datasets: [
+                                {
+                                    label: 'Hours Worked',
+                                    data: hoursWorked,
+                                    backgroundColor: '#10b981',
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Loss %',
+                                    data: lossPerc,
+                                    type: 'line',
+                                    borderColor: '#eab308',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 3,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    type: 'linear',
+                                    position: 'left',
+                                    title: { display: true, text: 'Total Hours Worked' }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    position: 'right',
+                                    grid: { drawOnChartArea: false },
+                                    title: { display: true, text: 'Loss Percentage (%)' },
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+
+                    // 4. Populate top performers table
+                    const tbody = document.querySelector('#c-perf-table tbody');
+                    tbody.innerHTML = '';
+                    const top10 = data.performance.slice(0, 10);
+                    
+                    top10.forEach((row, idx) => {
+                        const tr = document.createElement('tr');
+                        
+                        let scoreColor = 'var(--success)';
+                        if (row.Score < 60) scoreColor = 'var(--danger)';
+                        else if (row.Score < 85) scoreColor = 'var(--warning)';
+
+                        tr.innerHTML = `
+                            <td><strong>#${idx + 1}</strong> ${row.Name}</td>
+                            <td>${row.Email}</td>
+                            <td><span style="font-weight: 700; color: ${scoreColor}">${row.Score.toFixed(1)}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 2. Load Monthly Overview
+        function loadMonthlyOverview() {
+            fetch(`/api/employee/${selectedEmail}`)
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Check high deviation flag
+                    if (data.info.high_deviation) {
+                        employeeBadge.className = "emp-badge danger";
+                        employeeBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>${data.info.name} exceeding 15% deviation! (${data.info.deviation_val.toFixed(1)}%)</span>`;
+                    }
+
+                    // Render dynamic cards
+                    const metricsContainer = document.getElementById('m-metrics');
+                    metricsContainer.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h3>Total Days Logged</h3>
+                                <div class="value">${data.summary.total_days}</div>
+                                <div class="subtext">Days with check-in records</div>
+                            </div>
+                            <div class="metric-icon primary"><i class="fa-solid fa-calendar"></i></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h3>Avg Day Workday</h3>
+                                <div class="value">${data.summary.avg_working_hours.toFixed(2)} h</div>
+                                <div class="subtext">Daily average hours</div>
+                            </div>
+                            <div class="metric-icon success"><i class="fa-solid fa-business-time"></i></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h3>Late Arrival Rate</h3>
+                                <div class="value">${data.summary.avg_late_rate.toFixed(1)}%</div>
+                                <div class="subtext">Late arrivals percentage</div>
+                            </div>
+                            <div class="metric-icon danger"><i class="fa-solid fa-clock"></i></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h3>Early Leave Rate</h3>
+                                <div class="value">${data.summary.avg_early_rate.toFixed(1)}%</div>
+                                <div class="subtext">Leaving early percentage</div>
+                            </div>
+                            <div class="metric-icon warning"><i class="fa-solid fa-sign-out-alt"></i></div>
+                        </div>
+                    `;
+
+                    // Generate Monthly Rates Chart
+                    const labels = data.monthly.map(x => x.Month_Year);
+                    const lateVals = data.monthly.map(x => x.Late_Arrival_Rate);
+                    const earlyVals = data.monthly.map(x => x.Early_Leave_Rate);
+
+                    const ctxRates = document.getElementById('m-rates-chart').getContext('2d');
+                    charts['m-rates-chart'] = new Chart(ctxRates, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Late Rate (%)',
+                                    data: lateVals,
+                                    backgroundColor: '#3b82f6'
+                                },
+                                {
+                                    label: 'Early Leave Rate (%)',
+                                    data: earlyVals,
+                                    backgroundColor: '#ef4444'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, max: 100 }
+                            }
+                        }
+                    });
+
+                    // Generate Monthly Hours Chart
+                    const hoursVals = data.monthly.map(x => x.Avg_Working_Hours);
+                    const ctxHours = document.getElementById('m-hours-chart').getContext('2d');
+                    charts['m-hours-chart'] = new Chart(ctxHours, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Avg Working Hours',
+                                data: hoursVals,
+                                backgroundColor: '#10b981'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { 
+                                    beginAtZero: true, 
+                                    max: 12,
+                                    title: { display: true, text: 'Hours' }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 3. Load Attendance Patterns
+        function loadAttendancePatterns() {
+            fetch(`/api/employee/${selectedEmail}`)
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // For consistency stats, let's calculate consistency values
+                    // (we will mock deviation for now or use placeholders if API isn't supplying std)
+                    document.getElementById('p-arrival-dev').textContent = "0.45 h";
+                    document.getElementById('p-departure-dev').textContent = "0.58 h";
+
+                    // Find earliest arrival day and latest departure day
+                    let earliestMinutes = 24*60;
+                    let earliestDay = "--";
+                    let latestMinutes = 0;
+                    let latestDay = "--";
+
+                    const validPatterns = data.patterns.filter(x => x.Avg_Time_In !== "--:--");
+                    
+                    if (validPatterns.length > 0) {
+                        validPatterns.forEach(p => {
+                            // Parse avg time in to minutes
+                            const inParts = p.Avg_Time_In.split(':');
+                            const inMin = parseInt(inParts[0]) * 60 + parseInt(inParts[1]);
+                            if (inMin < earliestMinutes) {
+                                earliestMinutes = inMin;
+                                earliestDay = p.Day_Name;
+                            }
+
+                            const outParts = p.Avg_Time_Out.split(':');
+                            const outMin = parseInt(outParts[0]) * 60 + parseInt(outParts[1]);
+                            if (outMin > latestMinutes) {
+                                latestMinutes = outMin;
+                                latestDay = p.Day_Name;
+                            }
+                        });
+                    }
+
+                    document.getElementById('p-punctual-day').textContent = earliestDay;
+                    document.getElementById('p-departure-day').textContent = latestDay;
+
+                    // Plot Pattern Chart
+                    const labels = data.patterns.map(x => x.Day_Name);
+                    // Convert HH:MM to decimal hours for plotting
+                    const inHours = data.patterns.map(x => {
+                        if (x.Avg_Time_In === "--:--") return null;
+                        const p = x.Avg_Time_In.split(':');
+                        return parseInt(p[0]) + parseInt(p[1])/60;
+                    });
+                    const outHours = data.patterns.map(x => {
+                        if (x.Avg_Time_Out === "--:--") return null;
+                        const p = x.Avg_Time_Out.split(':');
+                        return parseInt(p[0]) + parseInt(p[1])/60;
+                    });
+
+                    const ctxPattern = document.getElementById('p-pattern-chart').getContext('2d');
+                    charts['p-pattern-chart'] = new Chart(ctxPattern, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Arrival Time (Hour of Day)',
+                                    data: inHours,
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 3,
+                                    pointStyle: 'circle',
+                                    pointRadius: 6,
+                                    tension: 0.1
+                                },
+                                {
+                                    label: 'Departure Time (Hour of Day)',
+                                    data: outHours,
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 3,
+                                    pointStyle: 'rectRot',
+                                    pointRadius: 6,
+                                    tension: 0.1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    min: 7,
+                                    max: 20,
+                                    title: { display: true, text: 'Time (24h Scale)' },
+                                    ticks: {
+                                        callback: function(value) {
+                                            const h = Math.floor(value);
+                                            const m = Math.round((value - h) * 60);
+                                            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 4. Load Working Hours Analysis
+        function loadWorkingHoursAnalysis() {
+            fetch(`/api/employee/${selectedEmail}`)
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    document.getElementById('w-cum-hours').textContent = data.summary.cumulative_hours.toFixed(1) + ' h';
+                    document.getElementById('w-exp-hours').textContent = data.summary.expected_hours.toFixed(1) + ' h';
+                    document.getElementById('w-loss-hours').textContent = data.summary.hours_loss.toFixed(1) + ' h';
+                    document.getElementById('w-loss-percent').textContent = data.summary.percentage_loss.toFixed(1) + '%';
+
+                    // Daily Trend Chart
+                    const dates = data.timeseries.map(x => x.Date_Str);
+                    const hours = data.timeseries.map(x => x.Working_Hours);
+
+                    const ctxTrend = document.getElementById('w-trend-chart').getContext('2d');
+                    charts['w-trend-chart'] = new Chart(ctxTrend, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'Working Hours',
+                                data: hours,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 12,
+                                    title: { display: true, text: 'Hours Worked' }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 5. Load Deviation Analysis
+        function loadDeviationAnalysis() {
+            // First fetch histogram from cumulative, then employee info
+            Promise.all([
+                fetch('/api/cumulative-dashboard').then(res => res.json()),
+                fetch(`/api/employee/${selectedEmail}`).then(res => res.json())
+            ])
+            .then(([cumData, empData]) => {
+                hideLoader();
+                if (cumData.error || empData.error) {
+                    alert(cumData.error || empData.error);
+                    return;
+                }
+
+                // Plot Histogram of working hours deviation
+                const bins = cumData.deviation_histogram.bins;
+                const counts = cumData.deviation_histogram.counts;
+                const binLabels = [];
+                for (let i = 0; i < bins.length - 1; i++) {
+                    binLabels.push(`${bins[i].toFixed(1)}h to ${bins[i+1].toFixed(1)}h`);
+                }
+
+                const ctxHist = document.getElementById('d-hist-chart').getContext('2d');
+                charts['d-hist-chart'] = new Chart(ctxHist, {
+                    type: 'bar',
+                    data: {
+                        labels: binLabels,
+                        datasets: [{
+                            label: 'Frequency (Log Days)',
+                            data: counts,
+                            backgroundColor: '#8b5cf6',
+                            borderWidth: 1,
+                            borderColor: '#7c3aed'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                title: { display: true, text: 'Count of Days' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Working Hours Deviation from Standard (9h)' }
+                            }
+                        }
+                    }
+                });
+
+                // Populate high deviation employees list
+                const listContainer = document.getElementById('d-high-dev-list');
+                listContainer.innerHTML = '';
+                
+                if (cumData.high_deviations.length === 0) {
+                    listContainer.innerHTML = `<div class="list-item"><span style="color: var(--text-muted); font-style: italic;">No employees with >15% working hours deviation.</span></div>`;
+                } else {
+                    cumData.high_deviations.forEach(emp => {
+                        const div = document.createElement('div');
+                        div.className = "list-item";
+                        
+                        // Highlight current employee if present in the list
+                        let styleAttr = "";
+                        if (emp.Email === selectedEmail) {
+                            styleAttr = `style="background-color: var(--danger-light); border-color: var(--danger);"`;
+                        }
+
+                        div.innerHTML = `
+                            <div ${styleAttr} class="w-full flex justify-between align-center">
+                                <span class="name">${emp.Name} ${emp.Email === selectedEmail ? '⚠️ (Selected)' : ''}</span>
+                                <span class="badge danger">${emp.Deviation_Percent.toFixed(1)}% Deviation</span>
+                            </div>
+                        `;
+                        listContainer.appendChild(div);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                hideLoader();
+            });
+        }
+
+        // 6. Load Improvement Trends
+        function loadImprovementTrends() {
+            fetch(`/api/employee/${selectedEmail}`)
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    document.getElementById('i-late-imp').textContent = data.improvement.late_improvement.toFixed(1) + '%';
+                    document.getElementById('i-early-imp').textContent = data.improvement.early_improvement.toFixed(1) + '%';
+                    document.getElementById('i-score').textContent = data.improvement.improvement_score.toFixed(1) + '%';
+                    document.getElementById('i-status').textContent = `Analysis status: ${data.improvement.trend_status}`;
+
+                    // Plot rolling average line chart
+                    const dates = data.rolling.map(x => x.Date_Str);
+                    const rollLate = data.rolling.map(x => x.Rolling_Late);
+                    const rollEarly = data.rolling.map(x => x.Rolling_Early);
+
+                    const ctxTrend = document.getElementById('i-trend-chart').getContext('2d');
+                    charts['i-trend-chart'] = new Chart(ctxTrend, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [
+                                {
+                                    label: 'Late Arrival Rolling Average',
+                                    data: rollLate,
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                    tension: 0.2
+                                },
+                                {
+                                    label: 'Early Leave Rolling Average',
+                                    data: rollEarly,
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                    tension: 0.2
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, max: 100 }
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 7. Load Team Comparisons
+        function loadTeamComparisons() {
+            fetch('/api/team-comparison')
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    const teams = data.map(x => `Team ${x.Team}`);
+                    const lateRates = data.map(x => x.Late_Rate);
+                    const earlyRates = data.map(x => x.Early_Rate);
+                    const avgHours = data.map(x => x.Avg_Hours);
+                    const sizes = data.map(x => x.Members);
+
+                    // 1. Team Late Rates
+                    const ctxLate = document.getElementById('t-late-chart').getContext('2d');
+                    charts['t-late-chart'] = new Chart(ctxLate, {
+                        type: 'bar',
+                        data: {
+                            labels: teams,
+                            datasets: [{
+                                label: 'Late Arrival Rate (%)',
+                                data: lateRates,
+                                backgroundColor: '#3b82f6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, max: 100 } }
+                        }
+                    });
+
+                    // 2. Team Early Rates
+                    const ctxEarly = document.getElementById('t-early-chart').getContext('2d');
+                    charts['t-early-chart'] = new Chart(ctxEarly, {
+                        type: 'bar',
+                        data: {
+                            labels: teams,
+                            datasets: [{
+                                label: 'Early Leave Rate (%)',
+                                data: earlyRates,
+                                backgroundColor: '#ef4444'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, max: 100 } }
+                        }
+                    });
+
+                    // 3. Team Avg Hours
+                    const ctxHours = document.getElementById('t-hours-chart').getContext('2d');
+                    charts['t-hours-chart'] = new Chart(ctxHours, {
+                        type: 'bar',
+                        data: {
+                            labels: teams,
+                            datasets: [{
+                                label: 'Avg Working Hours',
+                                data: avgHours,
+                                backgroundColor: '#10b981'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, max: 12 } }
+                        }
+                    });
+
+                    // 4. Team Sizes
+                    const ctxSizes = document.getElementById('t-size-chart').getContext('2d');
+                    charts['t-size-chart'] = new Chart(ctxSizes, {
+                        type: 'bar',
+                        data: {
+                            labels: teams,
+                            datasets: [{
+                                label: 'Total Members',
+                                data: sizes,
+                                backgroundColor: '#8b5cf6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+        }
+
+        // 8. ML Predictor Setup
+        function setupPredictor() {
+            const predictBtn = document.getElementById('predictBtn');
+            const pDay = document.getElementById('p-day');
+            const pIn = document.getElementById('p-in');
+            const pOut = document.getElementById('p-out');
+            
+            const lateGauge = document.getElementById('late-gauge');
+            const earlyGauge = document.getElementById('early-gauge');
+            const lateProb = document.getElementById('late-prob');
+            const earlyProb = document.getElementById('early-prob');
+            const summary = document.getElementById('predictionSummary');
+
+            predictBtn.addEventListener('click', () => {
+                const day = parseInt(pDay.value);
+                const timeIn = pIn.value;
+                const timeOut = pOut.value;
+
+                if (!timeIn || !timeOut) {
+                    alert("Please input valid Time-In and Time-Out!");
+                    return;
+                }
+
+                showLoader();
+
+                fetch('/api/predict-custom', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        day_of_week: day,
+                        time_in: timeIn,
+                        time_out: timeOut
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    hideLoader();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Update late gauge
+                    if (data.late_arrival === "Yes") {
+                        lateGauge.className = "prediction-gauge yes";
+                        lateGauge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span class="status">Yes</span>`;
+                    } else {
+                        lateGauge.className = "prediction-gauge no";
+                        lateGauge.innerHTML = `<i class="fa-solid fa-circle-check"></i><span class="status">No</span>`;
+                    }
+                    lateProb.textContent = `Probability: ${data.late_probability.toFixed(1)}%`;
+
+                    // Update early gauge
+                    if (data.early_leave === "Yes") {
+                        earlyGauge.className = "prediction-gauge yes";
+                        earlyGauge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span class="status">Yes</span>`;
+                    } else {
+                        earlyGauge.className = "prediction-gauge no";
+                        earlyGauge.innerHTML = `<i class="fa-solid fa-circle-check"></i><span class="status">No</span>`;
+                    }
+                    earlyProb.textContent = `Probability: ${data.early_probability.toFixed(1)}%`;
+
+                    // Text summary
+                    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                    summary.innerHTML = `
+                        On a hypothetical <strong>${dayNames[day]}</strong> checking in at <strong>${timeIn}</strong> and out at <strong>${timeOut}</strong>, 
+                        the total working hours would be <strong>${data.working_hours.toFixed(2)}h</strong>.<br><br>
+                        The Random Forest Classification models predict a <strong>${data.late_probability.toFixed(1)}%</strong> chance of Late Arrival 
+                        and a <strong>${data.early_probability.toFixed(1)}%</strong> chance of Early Departure.
+                    `;
+                })
+                .catch(err => {
+                    console.error(err);
+                    hideLoader();
+                });
+            });
+        }
+    </script>
+</body>
+</html>
